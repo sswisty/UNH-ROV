@@ -27,7 +27,7 @@ void loop() {
        for( int i = 0; i < 13; i++ )                    // Again 13 for Arduino 1 and 12 for Arduino 2
        {
          Serial.print(sv[i]);
-         Serial.print(" ");
+         Serial.print(" ");                 // This might have to be a ", " for the original python codes to work...
        }
        Serial.print( "\n" );
        // wait 2 milliseconds before the next loop
