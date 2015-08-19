@@ -1,0 +1,182 @@
+/* Part of ROV-002 Drive Control                            */
+
+/******************** MOVE COMMANDS *********************/
+void moveROV()
+{
+  // These variables are used for direction corrections
+  int T1val, T2val, T5val, T6val;
+  
+  // Thrusters 1 and 2 commands -----------------------------
+  if (LY != 0 && RX == 0)            // X-Translation only
+  {
+    if (LY > 0){
+      digitalWrite(T1dir, HIGH);
+      digitalWrite(T2dir, HIGH);
+    }
+    else if (LY < 0){
+      digitalWrite(T1dir, LOW);
+      digitalWrite(T2dir, LOW);
+    }
+    writeMotor(T1pwm, abs(LY));
+    writeMotor(T2pwm, abs(LY));
+  }
+  else if (LY == 0 && RX != 0)       // Yaw commands only
+  {
+    if (RX > 0){
+      digitalWrite(T1dir, HIGH);
+      digitalWrite(T2dir, LOW);
+    }
+    else if (RX < 0){
+      digitalWrite(T1dir, LOW);
+      digitalWrite(T2dir, HIGH);
+    }
+    writeMotor(T1pwm, abs(RX));
+    writeMotor(T2pwm, abs(RX));
+  }
+  else if (LY != 0 && RX != 0)       // Yaw and X-Translation
+  {
+    T1val = DirectionCorrection(LY, RX, '+');
+    T2val = DirectionCorrection(LY, RX, '-');
+    
+    if (T1val > 0) {digitalWrite(T1dir, HIGH); }
+    else if (T1val < 0) {digitalWrite(T1dir, LOW); }
+    
+    if (T2val > 0) {digitalWrite(T2dir, HIGH); }
+    else if (T2val < 0) {digitalWrite(T2dir, LOW); }
+    
+    
+    writeMotor(T1pwm, abs(T1val));
+    writeMotor(T2pwm, abs(T2val));
+  }
+  else
+  {
+    writeMotor(T1pwm, 0);
+    writeMotor(T2pwm, 0);
+  }
+  
+  // Thrusters 3 and 4 commands --------------------------
+  if (LX != 0)                     // Y-Translation
+  {
+    if (LX > 0){
+      digitalWrite(T3dir, HIGH);
+      digitalWrite(T4dir, LOW);
+    }
+    else if (LX < 0){
+      digitalWrite(T3dir, LOW);
+      digitalWrite(T4dir, HIGH);    //* NOT SURE ABOUT DIRECTIONS OF THESE MOTORS
+    }
+    
+    writeMotor(T3pwm, abs(LX));
+    writeMotor(T4pwm, abs(LX));
+  }
+  else
+  {
+    writeMotor(T3pwm, 0);
+    writeMotor(T4pwm, 0);
+  }
+  
+  // Thrusters 5 and 6 commands -------------------------------------------
+  if (RY == 0 && (RT != 0 || LT != 0))      // Z-Translation only
+  {
+    if (RT != 0 && LT == 0)                 // Descend
+    {
+      digitalWrite(T5dir, HIGH);
+      digitalWrite(T6dir, HIGH);
+      
+      writeMotor(T5pwm, abs(RT));
+      writeMotor(T6pwm, abs(RT));
+    }
+    else if (RT == 0 && LT != 0)            // Ascend
+    {
+      digitalWrite(T5dir, LOW);
+      digitalWrite(T6dir, LOW);
+      
+      writeMotor(T5pwm, abs(LT));
+      writeMotor(T6pwm, abs(LT));     // Triggers only have + values
+    }
+    else                                    // Both triggers pushed...
+    { 
+      writeMotor(T5pwm, 0);
+      writeMotor(T6pwm, 0);
+    }
+  }
+  
+  else if (RY != 0 && (RT == 0 && LT == 0))  // Pitch only
+  {
+    if (RY > 0){
+      digitalWrite(T5dir, HIGH);
+      digitalWrite(T6dir, LOW);
+    }
+    else if (RY < 0){
+      digitalWrite(T5dir, LOW);
+      digitalWrite(T6dir, HIGH);    //* NOT SURE ABOUT DIRECTIONS OF THESE MOTORS
+    }
+    
+    writeMotor(T5pwm, abs(RY));
+    writeMotor(T6pwm, abs(RY));         
+  }
+  
+  else if (RY != 0 && (RT != 0 || LT != 0))  // Pitch and Z-Translation  
+  {
+    if (RT != 0 && LT ==0)
+    {
+      T5val = DirectionCorrection(RT, RY, '+');
+      T6val = DirectionCorrection(RT, RY, '-');
+      
+      if (T5val > 0) {digitalWrite(T5dir, HIGH); }
+      else if (T5val < 0) {digitalWrite(T5dir, LOW); }
+    
+      if (T6val > 0) {digitalWrite(T6dir, HIGH); }
+      else if (T6val < 0) {digitalWrite(T6dir, LOW); }
+      
+      writeMotor(T5pwm, T5val); 
+      writeMotor(T6pwm, T6val);
+    }
+    else if (RT == 0 && LT != 0)
+    {
+      T5val = DirectionCorrection(LT, RY, '-');
+      T6val = DirectionCorrection(LT, RY, '+');
+      
+      if (T5val > 0) {digitalWrite(T5dir, HIGH); }
+      else if (T5val < 0) {digitalWrite(T5dir, LOW); }
+    
+      if (T6val > 0) {digitalWrite(T6dir, HIGH); }
+      else if (T6val < 0) {digitalWrite(T6dir, LOW); }
+      
+      writeMotor(T5pwm, T5val); 
+      writeMotor(T6pwm, T6val);
+    }
+    else  // WE WANT THE MOTORS TO STOP SPINNING!
+    {
+      writeMotor(T5pwm, 0);
+      writeMotor(T6pwm, 0);
+    }
+  }
+  
+  else
+  {
+    writeMotor(T5pwm, 0);
+    writeMotor(T6pwm, 0);
+  }
+}
+
+/************************ STOP COMMANDS ******************************/
+
+int stopROV()
+{
+  writeMotor(T1pwm, 0);
+  writeMotor(T2pwm, 0);
+  writeMotor(T3pwm, 0);
+  writeMotor(T4pwm, 0);
+  writeMotor(T5pwm, 0);
+  writeMotor(T6pwm, 0);
+}
+
+
+
+/****************** Actual commands sent to ESC******************************/
+
+void writeMotor(int motor, int value)
+{
+  analogWrite(motor, value);
+}
